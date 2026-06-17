@@ -107,6 +107,27 @@ Esa es la vista web del proyecto. Tambien puedes abrir Swagger para probar la AP
 http://127.0.0.1:8000/docs
 ```
 
+## Despliegue en Render
+
+El repositorio incluye `render.yaml` para crear el servicio web en Render.
+
+Configuracion esperada:
+
+```text
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
+```
+
+En Render se deben crear estas variables de entorno:
+
+```env
+OPENWEATHER_API_KEY=tu_api_key_de_openweathermap
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_KEY=tu_key_publica_o_anon
+```
+
+No subas el archivo `.env` a GitHub. Ese archivo solo se usa localmente.
+
 ## Endpoints principales
 
 | Metodo | Ruta | Descripcion |
