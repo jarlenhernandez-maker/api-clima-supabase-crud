@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clima CRUD | Supabase</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-2: #eef6f3;
+      --text: #172033;
+      --muted: #667085;
+      --line: #d8e0ea;
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --accent: #f59e0b;
+      --danger: #dc2626;
+      --shadow: 0 18px 45px rgba(22, 32, 51, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      background: #172033;
+      color: #ffffff;
+      padding: 28px 32px;
+      border-bottom: 5px solid var(--accent);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    header p {
+      margin: 0;
+      color: #d9e2ef;
+      max-width: 760px;
+      line-height: 1.45;
+    }
+
+    .docs-link {
+      flex: 0 0 auto;
+      color: #ffffff;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.32);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 24px 42px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      font: inherit;
+      color: var(--text);
+      background: #ffffff;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    button:hover { background: var(--primary-dark); }
+    button.secondary { background: #334155; }
+    button.danger { background: var(--danger); }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .weather-card {
+      display: none;
+      margin: 0 18px 18px;
+      padding: 16px;
+      background: var(--panel-2);
+      border: 1px solid #b7d9d2;
+      border-radius: 8px;
+    }
+
+    .weather-card strong {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th, td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      background: #f8fafc;
+    }
+
+    td small {
+      color: var(--muted);
+      display: block;
+      margin-top: 4px;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 8px;
+      min-width: 150px;
+    }
+
+    .row-actions button {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 14px;
+      padding: 0 18px 18px;
+    }
+
+    @media (max-width: 860px) {
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .grid { grid-template-columns: 1fr; }
+      main { padding-inline: 14px; }
+      header { padding-inline: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div>
+        <h1>Clima CRUD</h1>
+        <p>Consulta datos reales del clima con OpenWeatherMap y administra los registros guardados en Supabase.</p>
+      </div>
+      <a class="docs-link" href="/docs">Swagger</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Nueva consulta</h2>
+        </div>
+        <form id="create-form">
+          <label>
+            Ciudad
+            <input id="ciudad" name="ciudad" placeholder="Bogota, Medellin, Lima" required minlength="2">
+          </label>
+          <label>
+            Notas
+            <textarea id="notas" name="notas" placeholder="Comentario opcional para el registro"></textarea>
+          </label>
+          <div class="actions">
+            <button type="button" id="preview-btn" class="secondary">Consultar</button>
+            <button type="submit">Guardar</button>
+          </div>
+        </form>
+        <div id="weather-card" class="weather-card"></div>
+        <div id="status" class="status"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Registros guardados</h2>
+          <button type="button" id="refresh-btn" class="secondary">Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ciudad</th>
+                <th>Clima</th>
+                <th>Notas</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="rows">
+              <tr><td colspan="5">Cargando registros...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const form = document.querySelector("#create-form");
+    const cityInput = document.querySelector("#ciudad");
+    const notesInput = document.querySelector("#notas");
+    const statusBox = document.querySelector("#status");
+    const weatherCard = document.querySelector("#weather-card");
+    const rows = document.querySelector("#rows");
+
+    function setStatus(message) {
+      statusBox.textContent = message || "";
+    }
+
+    async function requestJson(url, options) {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : null;
+      if (!response.ok) {
+        const detail = data && data.detail ? data.detail : "No se pudo completar la solicitud";
+        throw new Error(detail);
+      }
+      return data;
+    }
+
+    function renderWeather(data) {
+      weatherCard.style.display = "block";
+      weatherCard.innerHTML = `
+        <strong>${data.ciudad}, ${data.pais}</strong>
+        <div class="metrics">
+          <div class="metric"><span>Temperatura</span>${data.temperatura} C</div>
+          <div class="metric"><span>Sensacion</span>${data.sensacion_termica} C</div>
+          <div class="metric"><span>Humedad</span>${data.humedad}%</div>
+          <div class="metric"><span>Descripcion</span>${data.descripcion}</div>
+        </div>
+      `;
+    }
+
+    function formatDate(value) {
+      if (!value) return "";
+      return new Date(value).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" });
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    async function loadRows() {
+      try {
+        const data = await requestJson("/consultas");
+        if (!data.length) {
+          rows.innerHTML = '<tr><td colspan="5">No hay registros guardados.</td></tr>';
+          return;
+        }
+        rows.innerHTML = data.map((item) => `
+          <tr>
+            <td>
+              <strong>${escapeHtml(item.ciudad)}, ${escapeHtml(item.pais)}</strong>
+              <small>ID: ${escapeHtml(item.id)}</small>
+            </td>
+            <td>${item.temperatura} C, ${item.humedad}%<small>${escapeHtml(item.descripcion)}</small></td>
+            <td>${escapeHtml(item.notas || "Sin notas")}</td>
+            <td>${formatDate(item.created_at)}</td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="secondary" onclick="editRow('${item.id}')">Editar</button>
+                <button type="button" class="danger" onclick="deleteRow('${item.id}')">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        `).join("");
+      } catch (error) {
+        rows.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    async function previewWeather() {
+      const city = cityInput.value.trim();
+      if (!city) return setStatus("Escribe una ciudad.");
+      try {
+        setStatus("Consultando clima...");
+        const data = await requestJson(`/clima/${encodeURIComponent(city)}`);
+        renderWeather(data);
+        setStatus("Consulta lista.");
+      } catch (error) {
+        setStatus(error.message);
+      }
+    }
+
+    async function createRow(event) {
+      event.preventDefault();
+      const ciudad = cityInput.value.trim();
+      const notas = notesInput.value.trim();
+      if (!ciudad) return setStatus("Escribe una ciudad.");
+      try {
+        setStatus("Guardando en Supabase...");
+        const data = await requestJson("/consultas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ciudad, notas: notas || null })
+        });
+        renderWeather(data);
+        form.reset();
+        setStatus("Registro guardado correctamente.");
+        await loadRows();
+      } catch (error) {
+        setStatus(error.message);
+      }
+    }
+
+    async function editRow(id) {
+      const notas = prompt("Nueva nota del registro:");
+      if (notas === null) return;
+      try {
+        setStatus("Actualizando registro...");
+        await requestJson(`/consultas/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notas })
+        });
+        setStatus("Registro actualizado.");
+        await loadRows();
+      } catch (error) {
+        setStatus(error.message);
+      }
+    }
+
+    async function deleteRow(id) {
+      if (!confirm("Eliminar este registro?")) return;
+      try {
+        setStatus("Eliminando registro...");
+        await requestJson(`/consultas/${id}`, { method: "DELETE" });
+        setStatus("Registro eliminado.");
+        await loadRows();
+      } catch (error) {
+        setStatus(error.message);
+      }
+    }
+
+    document.querySelector("#preview-btn").addEventListener("click", previewWeather);
+    document.querySelector("#refresh-btn").addEventListener("click", loadRows);
+    form.addEventListener("submit", createRow);
+    loadRows();
+  </script>
+</body>
+</html>
